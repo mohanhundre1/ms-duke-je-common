@@ -1,0 +1,49 @@
+# ==============================================================================
+# Service ConfigMap - Non-secret configuration
+# ==============================================================================
+# Anything not listed here uses the code default.
+# Values shown = same across all envs (dev/stg/prod).
+# <per-env> = DevOps must supply per environment.
+#
+# Service-to-Azure access (Key Vault, Storage) uses Managed Identity via
+# DefaultAzureCredential — no keys/secrets needed in ConfigMap or KV.
+# DB password is in KV as a full connection string:
+#     secrets.get("database-url")
+#
+# ---- Provider switch (deployed envs always use keyvault) ----------------------
+SECRET_PROVIDER             = keyvault
+AZURE_KEYVAULT_URL          = <per-env>       # e.g. https://duke-mje-dev-kv.vault.azure.net/
+
+# ---- LLM ----------------------------------------------------------------------
+# AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY come from Key Vault.
+LLM_PROVIDER                = azure_openai
+AZURE_OPENAI_API_VERSION    = 2025-01-01-preview
+GPT41_DEPLOYMENT             = gpt-5.1
+GPT51_DEPLOYMENT             = gpt-5.1
+GPT52_DEPLOYMENT             = gpt-5.2
+EMBEDDING_DEPLOYMENT_NAME    = text-embedding-3-small
+EMBEDDING_API_VERSION        = 2024-02-01
+
+# ---- Auth: Entra ID (Azure AD) SSO --------------------------------------------
+# Tokens issued by Microsoft. API validates signature via JWKS (public keys, no secret).
+AUTH_PROVIDER                = entra_id
+ENTRA_TENANT_ID              = <per-env>
+ENTRA_APP_CLIENT_ID          = <per-env>       # Entra App Registration (Application/Client ID) for the API
+ENTRA_API_AUDIENCE           = api://<per-env> # "Application ID URI" of the API app registration
+ENTRA_ALLOWED_GROUPS         = <comma-separated group object IDs allowed to call the API>
+# The remainder of the ENTRA_ALLOWED_GROUPS comment/value was truncated in the screenshot.
+
+# ---- Storage (Managed Identity — no keys) -------------------------------------
+# Code path: BlobServiceClient(account_url=..., credential=DefaultAzureCredential()).
+# Grant the workload's MI the "Storage Blob Data Contributor" role on the account.
+AZURE_STORAGE_ACCOUNT_NAME   = <per-env>       # e.g. dukemjedevsa
+AZURE_STORAGE_INPUT_CONTAINER = duke-inputs
+AZURE_STORAGE_OUTPUT_CONTAINER = duke-outputs
+
+# ---- Redis (Managed Identity — no keys) ---------------------------------------
+# Code path: redis.Redis(host="{name}.redis.cache.windows.net", ssl=True, password=<AAD token>).
+# Grant the workload's MI the "Redis Cache Contributor" role on the instance.
+# Same Redis instance as backend (db 0 = dapr-statestore). Agent services use db 2.
+AZURE_REDIS_NAME             = <per-env>       # e.g. qa-ey-redis-fmsagent01
+AZURE_REDIS_DB               = 2               # db 0 = dapr-statestore, db 2 = duke-je-agent-events
+PROGRESS_BUS_BACKEND          = redis           # "memory" for local dev, "redis" for deployed

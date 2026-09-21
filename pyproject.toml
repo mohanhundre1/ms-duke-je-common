@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ms-duke-je-common"
+version = "0.5.10"
+description = "Shared platform utilities for the Duke MJE automation services"
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "Proprietary" }
+authors = [{ name = "EY Finance Managed Services - Duke MJE" }]
+dependencies = []
+
+[project.optional-dependencies]
+secrets = [
+    "azure-identity>=1.17.0",
+    "azure-keyvault-secrets>=4.8.0",
+]
+config = ["
+        pyyaml>=6.0", 
+        "httpx>=0.27",
+        "pydantic-settings>=2.14.2",
+]
+loaders = [
+    "httpx>=0.27",
+]
+storage = [
+        "azure-storage-blob>=12.20.0", 
+        "azure-identity>=1.17.0",
+]
+redis = [
+    "redis[hiredis]>=5.0.0",
+    "azure-identity>=1.17.0",
+]
+transport = [
+    "a2a-sdk>=1.0.3,<2.0",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "python-multipart>=0.0.31",
+    "starlette>=1.3.1",
+]
+tracing = [
+    "opentelemetry-api==1.44.0",
+    "opentelemetry-sdk==1.44.0",
+    "opentelemetry-instrumentation-asgi==0.65b0",
+    "opentelemetry-instrumentation-httpx==0.65b0",
+    "opentelemetry-instrumentation-openai-v2==2.4b0",
+    "azure-monitor-opentelemetry-exporter==1.0.0b57",
+    "opentelemetry-exporter-otlp-proto-grpc==1.44.0",
+]
+llm = ["openai==2.44.0"]
+
+# The screenshot labels this extra as "tpaо"; the final character is unclear.
+tpaо = [
+    "ms-duke-je-common[llm]", 
+    "ms-duke-je-common[transport]",
+]
+
+qa = ["pydantic>=2.7"]
+assembly_gate = ["pyyaml>=6.0"]
+source_coordinator = ["openpyxl>=3.1"]
+output = ["openpyxl>=3.1"]
+vision = ["pyyaml>=6.0", "pillow>=12.2.0", "pypdf>=6.13.3"]
+vision-pdf = ["pyyaml>=6.0", "pymupdf==1.25.2"]
+normalization = ["pyyaml>=6.0", "openpyxl>=3.1", "pydantic>=2.7"]
+auth = ["msal>=1.28.0", "PyJWT[crypto]>=2.13.0"]
+output_document = ["pydantic>=2.7"]
+
+agents = [
+    "ms-duke-je-common[assembly_gate]",
+    "ms-duke-je-common[source_coordinator]",
+    "ms-duke-je-common[vision]",
+    "ms-duke-je-common[normalization]",
+]
+all = [
+    "ms-duke-je-common[secrets]",
+    "ms-duke-je-common[config]",
+    "ms-duke-je-common[storage]",
+    "ms-duke-je-common[transport]",
+    "ms-duke-je-common[llm]",
+    "ms-duke-je-common[qa]",
+    "ms-duke-je-common[agents]",
+    "ms-duke-je-common[output]",
+    "ms-duke-je-common[tpaо]",
+]
+framework = [
+    "ms-duke-je-common[llm]",
+    "ms-duke-je-common[storage]",
+    "ms-duke-je-common[auth]",
+    "ms-duke-je-common[transport]",
+    "ms-duke-je-common[tracing]",
+    "ms-duke-je-common[redis]",
+    "ms-duke-je-common[secrets]",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.26",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "pyright>=1.1",
+    "import-linter>=2.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ms_duke_je_common"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# Transport isolation: the a2a SDK must remain confined to the transport package.
+[tool.importlinter]
+root_package = "ms_duke_je_common"
+
+[[tool.importlinter.contracts]]
+name = "a2a SDK is confined to the transport package"
+type = "forbidden"
+source_modules = [
+    "ms_duke_je_common.executor",
+    "ms_duke_je_common.middleware",
+]
+forbidden_modules = ["a2a"]
+allow_indirect_imports = "true"

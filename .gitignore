@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+.venv/
+.env
+.env.local
+.DS_Store
+
+# Local markdown notes/docs in common repo
+README.md
+docs/*.md
